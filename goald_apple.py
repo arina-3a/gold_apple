@@ -1,11 +1,44 @@
 from bs4 import BeautifulSoup
+from typing import Any
 import requests
 import re
 import json
 from  pprint import pprint
 import psycopg2
+from datetime import datetime
 
 # Запрос на получение данных json по 1 интересующей страницы бренда
+def inserting_values_into_the_database(data_from_all_pages: list[list[list[Any | None]]], categoryId : int):
+    conn = database_connection()
+    cursor = conn.cursor()
+    for page in range(0, len(data_from_all_pages)):
+        for product in range(0, len(data_from_all_pages[page])):
+            product_name = data_from_all_pages[page][product][1]
+            productType = data_from_all_pages[page][product][2]
+            itemId = data_from_all_pages[page][product][3]
+            currentUnitValue = data_from_all_pages[page][product][4]
+            unitName = data_from_all_pages[page][product][5]
+            price_current = data_from_all_pages[page][product][6]
+            price_regular = data_from_all_pages[page][product][7]
+            discount_percent = data_from_all_pages[page][product][8]
+            cursor.execute("SELECT productid_goldapple FROM products WHERE productid_goldapple = %s", (itemId,))
+            result = cursor.fetchone()
+            if result:
+                print('Запись не добавилась, так как она уже есть в бд')
+            else:
+                cursor.execute("INSERT INTO products (brandid ,productid_goldapple, productname, producttype, currentunitvalue, unitname) "
+                           "VALUES (%s, %s, %s, %s, %s, %s)", ( '9', data_from_all_pages[page][product][3], product_name, productType, currentUnitValue, unitName))
+            #вставка данных по ценам работает
+            # currentTime = datetime.now()
+            # cursor.execute("SELECT productid FROM products WHERE productid_goldapple = %s", (itemId,))
+            # result = cursor.fetchone()
+            # cursor.execute("INSERT INTO prices (productid, date, price_current, price_regular, discount_percent) " "VALUES (%s, %s, %s, %s, %s)",
+            #                (result[0], currentTime, price_current, price_regular, discount_percent))
+    conn.commit()
+    cursor.close()  # закрываем курсор
+    conn.close()  # закрываем соединение
+
+
 def request_for_receipt_of_goods_by_brand(url_, categoryId, page):
     # URL для запроса
     #url = 'https://goldapple.ru/front/api/catalog/products' # https://goldapple.ru/brands/catrice  ?p=1
@@ -76,8 +109,8 @@ def receipt_of_goods_by_brand(url, categoryId):
         if not response['data']['products']:
             break
     return data_from_all_pages
-
 #database connection
+
 def database_connection():
     try:
     # Установите соединение с базой данных
@@ -93,32 +126,6 @@ def database_connection():
     except (Exception, psycopg2.Error) as error:
         print("Ошибка при подключении к PostgreSQL", error)
 
-def inserting_values_into_the_database(data_from_all_pages, categoryId ):
-    conn = database_connection()
-    cursor = conn.cursor()
-    for page in range(0, len(data_from_all_pages)):
-        for product in range(0, len(data_from_all_pages[page])):
-            product_name = data_from_all_pages[page][product][1]
-            productType = data_from_all_pages[page][product][2]
-            itemId = data_from_all_pages[page][product][3]
-            currentUnitValue = data_from_all_pages[page][product][4]
-            unitName = data_from_all_pages[page][product][5]
-            price_current = data_from_all_pages[page][product][6]
-            price_regular = data_from_all_pages[page][product][7]
-            discount_percent = data_from_all_pages[page][product][8]
-            cursor.execute("SELECT productid_goldapple FROM products WHERE productid_goldapple = %s", (itemId,))
-            result = cursor.fetchone()
-            if result:
-                print('Запись не добавилась, так как она уже есть в бд')
-                continue
-            else:
-                cursor.execute("INSERT INTO products (brandid ,productid_goldapple, productname, producttype, currentunitvalue, unitname) "
-                           "VALUES (%s, %s, %s, %s, %s, %s)", ( '9', itemId, product_name, productType, currentUnitValue, unitName))
-    cursor.close()  # закрываем курсор
-    conn.commit()
-    conn.close()  # закрываем соединение
-
-
 def main():
     url = 'https://goldapple.ru/front/api/catalog/products'
     categoryId = '1000001141',  # catrice
@@ -126,6 +133,7 @@ def main():
     inserting_values_into_the_database(data_from_all_pages = data_from_all_pages, categoryId = categoryId)
     #cleanup_response_page(request_for_receipt_of_goods_by_brand(url, categoryId, 1))
     #inserting_values_into_the_database()
+
 
 
 
