@@ -5,6 +5,8 @@ from datetime import datetime
 from product import Product
 import logging
 
+# damp in postgres in docker:
+# docker exec -t gold_apple_2-postgres-1 pg_dump -U airflow gold_apple > /home/wifelly/projects/gold_apple_2/dumps/dump.sql
 
 # ДЛЯ ДОКЕРА
 # def database_connection():
