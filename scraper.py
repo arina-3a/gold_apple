@@ -26,10 +26,10 @@ def get_request_config(category_id: str, page_number: str) -> tuple[dict[str, st
     return params, headers
 
 
-def request_product_page(page_number: str):
+def request_product_page(page_number: str, category_id: str):
     # URL для запроса
     url = 'https://goldapple.ru/front/api/catalog/products'
-    params, headers = get_request_config(category_id='1000001141', page_number=page_number)
+    params, headers = get_request_config(category_id=category_id, page_number=page_number)
     # Выполнение GET-запроса
     response = requests.get(url, headers=headers, params=params)
     if response.status_code == 200:
